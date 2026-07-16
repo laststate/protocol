@@ -6,6 +6,10 @@ Binary, versioned, transport-independent contract for firmware/hardware diagnost
 
 When Latch, Relay, Trace, or third-party code disagree on bytes, **this repo wins**.
 
+Relay and Trace keep local LEP codecs for deployment independence, but their CI
+runs `test-vectors/` against those codecs (`PROTOCOL_VECTORS` / `TestProtocolVectors`).
+Prefer changing this repo first, then bumping consumer codecs.
+
 ## Wire (summary)
 
 | Item | Value |
