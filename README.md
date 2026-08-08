@@ -58,6 +58,16 @@ cd implementations/go && go test ./...
 python conformance/runner/run.py
 ```
 
+## Community and security
+
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [Support](SUPPORT.md)
+
+Maintainers preparing a visibility change should complete the
+[publication checklist](PUBLICATION.md).
+
 ## License
 
 Apache-2.0 — [`LICENSE`](LICENSE)
