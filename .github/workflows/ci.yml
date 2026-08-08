@@ -16,6 +16,9 @@ jobs:
         with:
           go-version: '1.22.x'
           cache-dependency-path: implementations/go/go.sum
+      - name: Vet reference codec
+        working-directory: implementations/go
+        run: go vet ./...
       - name: Go reference codec
         working-directory: implementations/go
         run: go test ./...
