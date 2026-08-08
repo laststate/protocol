@@ -22,6 +22,16 @@ const (
 	KnownFlags              = FlagAuthenticated | FlagEncrypted | FlagAEAD | FlagTruncated | FlagCompressed
 )
 
+const (
+	TLVCPU64        uint16 = 16
+	TLVBlackbox     uint16 = 17
+	TLVMission      uint16 = 18
+	TLVTimeSync     uint16 = 19
+	TLVProvisioning uint16 = 20
+	TLVSupervisor   uint16 = 21
+	TLVEnvironment  uint16 = 22
+)
+
 type ErrorKind string
 
 const (

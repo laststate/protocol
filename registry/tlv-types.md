@@ -30,7 +30,13 @@ type u16 LE | length u16 LE | value[length]
 | 13 | MEMORY | yes |
 | 14 | STACK | no |
 | 15 | HEAP | no |
-| 0x0010–0x0013 | build/project/release/hash extensions | — |
+| 16 | CPU64 | no |
+| 17 | BLACKBOX | yes |
+| 18 | MISSION | no |
+| 19 | TIME_SYNC | no |
+| 20 | PROVISIONING | no |
+| 21 | SUPERVISOR | no |
+| 22 | ENVIRONMENT | no |
 | 0x0020–0x0021 | attachment meta/chunk | yes (chunk) |
 | 0x0030 | probe waveform (reserved) | — |
 | 0x8000–0x8FFF | vendor | — |
@@ -145,3 +151,63 @@ flags: SAFE, HASH, VOLATILE, SENSITIVE.
 ## 15 HEAP (20 bytes)
 
 `free_bytes | minimum_free | largest_block | allocation_failures | pool_exhaustions`
+
+## 16 CPU64
+
+`encoding u8 | flags u8 | architecture u8 | word_size u8`
+
+Encoding is `1`, architecture is `5` (`RISCV64`) and word size is `8`.
+Exactly one flag is set: `COMPLETE` (`0x01`) or `UNAVAILABLE` (`0x02`). A
+complete value is 292 bytes and appends `x0..x31`, `mstatus`, `mcause`,
+`mtval`, and `mepc` as 36 little-endian `u64` values. An unavailable value is
+exactly four bytes; consumers MUST NOT infer upper words from TLV 4 (`CPU`).
+
+## 17 BLACKBOX (27 bytes, repeatable)
+
+`encoding u8 | timestamp_ms u32 | kind u16 | source_id u16 | flags u16 |
+value[4] i32`
+
+Encoding is `1`. A producer emits records oldest to newest within the bounded
+export window and omits records marked sensitive.
+
+## 18 MISSION (46 bytes plus optional strings)
+
+`encoding u8 | mission_hash u32 | dive_hash u32 | node_hash u32 |
+vehicle_mode_hash u32 | phase u32 | depth_cm i32 | elapsed_ms u32 |
+incident_hi u64 | incident_lo u64 | incident_active u8`
+
+Encoding is `1`. If strings are retained, zero or more suffix fields follow as
+`field_id u8 | length u8 | UTF-8 bytes`: 1 `mission_id`, 2 `dive_id`, 3
+`node_id`, 4 `vehicle_mode`.
+
+## 19 TIME_SYNC (22 bytes)
+
+`encoding u8 | source u8 | utc_ms_at_sync u64 | monotonic_ms_at_sync u32 |
+uncertainty_ms u32 | generation u32`
+
+Encoding is `1`. Source values are 1 RTC, 2 GNSS, 3 NTP, 4 PTP, and 5 HOST.
+
+## 20 PROVISIONING (18 bytes)
+
+`encoding u8 | state u8 | key_id u32 | pending_key_id u32 | generation u32 |
+monotonic_counter u32`
+
+Encoding is `1`. State values are 0 unprovisioned, 1 active, 2 rotating, 3
+revoked, 4 decommissioned, and 5 decommissioning.
+
+## 21 SUPERVISOR (17 bytes)
+
+`encoding u8 | active_alarms u32 | previous_alarms u32 | transitions u32 |
+last_change_ms u32`
+
+Encoding is `1`. Alarm bit definitions are product policy; consumers preserve
+unknown bits.
+
+## 22 ENVIRONMENT (29 bytes)
+
+`encoding u8 | timestamp_ms u32 | pressure_pa u32 | depth_cm i32 |
+internal_temperature_c i16 | humidity_permyriad u16 | vibration_mg_rms u16 |
+flags u16 | sample_count u32 | leak_events u32`
+
+Encoding is `1`. Environment flags are bit 0 leak detected, bit 1 water
+ingress, bit 2 pressure-sensor fault, and bit 3 vibration limit.

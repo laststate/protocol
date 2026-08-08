@@ -141,18 +141,25 @@ Assigned types: [`registry/tlv-types.md`](../registry/tlv-types.md) and [`identi
 | 1 | `0x02` | `ENCRYPTED` | Payload is ciphertext |
 | 2 | `0x04` | `AEAD` | 28-byte AEAD metadata present |
 | 3 | `0x08` | `TRUNCATED` | Sender omitted optional fields due to capacity |
-| 4–7 | | reserved | MUST be zero on send; unknown set bits MUST be rejected |
+| 4 | `0x10` | `COMPRESSED` | Payload is compressed; see §5.2 |
+| 5–7 | | reserved | MUST be zero on send; unknown set bits MUST be rejected |
 
 ### 5.1 Flag combination rules
 
 1. `ENCRYPTED` and `AEAD` MUST both be set or both clear.
 2. If `AEAD` is set, `AUTHENTICATED` MUST also be set.
 3. `TRUNCATED` MAY combine with any valid security combination.
-4. Receivers MUST reject unknown flag bits (v1: any bit outside `0x0F`).
+4. `COMPRESSED` MAY combine with any valid security combination. A receiver
+   that does not implement the selected compression codec MUST reject the
+   envelope before interpreting its payload.
+5. Receivers MUST reject unknown flag bits (v1: any bit outside `0x1F`).
 
-### 5.2 Informative — historical compression flag collision
+### 5.2 Compressed payloads
 
-Some Relay builds treated bit 3 as `COMPRESSED` instead of `TRUNCATED`. That collides with Latch (the primary producer). **Canonical v1 bit 3 is `TRUNCATED`.** Compression, when standardized, uses a **different** mechanism (see [`compression.md`](compression.md) and [`compatibility.md`](compatibility.md)).
+`COMPRESSED` is bit 4; `TRUNCATED` remains bit 3. The compressed payload is
+opaque until decompressed successfully, so receivers MUST NOT parse TLVs or
+make routing decisions from it first. Compression selection and bounds are
+defined in [`compression.md`](compression.md).
 
 ---
 
