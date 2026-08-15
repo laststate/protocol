@@ -1,0 +1,53 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  verify-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Validate tag matches VERSION
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          current=$(cat VERSION)
+          if [ "$version" != "$current" ]; then
+            echo "Tag v${version} does not match VERSION file: ${current}" >&2
+            exit 1
+          fi
+      - name: Run conformance
+        run: python conformance/runner/run.py
+      - name: Run reference codec tests
+        working-directory: implementations/go
+        run: go test ./...
+  test:
+    needs: verify-tag
+    uses: ./.github/workflows/ci.yml
+  package:
+    needs: [verify-tag, test]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+      - name: Build reference codec
+        working-directory: implementations/go
+        run: go build -trimpath -ldflags "-s -w -X main.version=${GITHUB_REF_NAME}" -o laststate-protocol ./cmd/laststate-protocol
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: laststate-protocol-${{ github.ref_name }}
+          path: implementations/go/laststate-protocol
+          if-no-files-found: error

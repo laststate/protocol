@@ -1,14 +1,22 @@
 # Last State Protocol (LEP)
 
-Binary, versioned, transport-independent contract for firmware/hardware diagnostics between devices, gateways, and servers.
+Binary, versioned, transport-independent contract for firmware and hardware
+diagnostics between devices, gateways, and servers.
+
+[![CI](https://github.com/laststate/protocol/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/laststate/protocol/actions/workflows/ci.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Go Reference](https://img.shields.io/badge/go-reference-1.22+-007D9C.svg)](implementations/go)
+[![Python Conformance](https://img.shields.io/badge/python-conformance-3.10+-3776AB.svg)](conformance)
 
 **v1.0.0** — [`VERSION`](VERSION)
 
-When Latch, Relay, Trace, or third-party code disagree on bytes, **this repo wins**.
+When Latch, Relay, Trace, or third-party code disagree on bytes, **this repo
+wins**.
 
 Relay and Trace keep local LEP codecs for deployment independence, but their CI
-runs `test-vectors/` against those codecs (`PROTOCOL_VECTORS` / `TestProtocolVectors`).
-Prefer changing this repo first, then bumping consumer codecs.
+runs `test-vectors/` against those codecs (`PROTOCOL_VECTORS` /
+`TestProtocolVectors`). Prefer changing this repo first, then bumping consumer
+codecs.
 
 ## Wire (summary)
 
@@ -47,16 +55,27 @@ conformance/runner/   Vector checker
 | [spec/compatibility.md](spec/compatibility.md) | Versioning |
 | [spec/limits.md](spec/limits.md) | Size bounds |
 
-## Not in this repo
+## Try it
 
-Product code: HardFault handlers, SQLite spool, Trace UI, Probe PCB, cloud billing.
+Validate the reference codec and golden vectors locally:
 
-## Check
-
-```bash
-cd implementations/go && go test ./...
+```sh
+cd implementations/go && go vet ./... && go test ./...
 python conformance/runner/run.py
 ```
+
+To add a new golden vector or update the registry:
+
+1. Edit [`registry/tlv-types.md`](registry/tlv-types.md) first.
+2. Add or update hex vectors under [`test-vectors/`](test-vectors/).
+3. Run the conformance runner; fix the codec if a vector no longer passes.
+4. Update the [`CHANGELOG.md`](CHANGELOG.md) with a one-line note.
+
+## Not in this repo
+
+Product code: HardFault handlers, SQLite spool, Trace UI, Probe PCB, cloud
+billing. Those live in [`latch`](https://github.com/laststate/latch),
+[`relay`](https://github.com/laststate/relay), and the private Trace backend.
 
 ## Community and security
 
@@ -64,6 +83,7 @@ python conformance/runner/run.py
 - [Security policy](SECURITY.md)
 - [Code of conduct](CODE_OF_CONDUCT.md)
 - [Support](SUPPORT.md)
+- [Roadmap](ROADMAP.md) and [changelog](CHANGELOG.md)
 
 Maintainers preparing a visibility change should complete the
 [publication checklist](PUBLICATION.md).

@@ -1,0 +1,10 @@
+# Default ownership keeps security-sensitive changes visible to the maintainer.
+* @TheusHen
+
+# Wire-format and registry changes require explicit owner review.
+/spec/ @TheusHen
+/registry/ @TheusHen
+/SECURITY.md @TheusHen
+
+# Supply-chain automation and disclosure policy require explicit owner review.
+/.github/workflows/ @TheusHen

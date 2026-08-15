@@ -15,12 +15,16 @@ permissions:
 jobs:
   analyze:
     if: github.event.repository.private == false
-    name: Analyze Go
+    name: Analyze
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [go, python]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: github/codeql-action/init@v3
         with:
-          languages: go
+          languages: ${{ matrix.language }}
       - uses: github/codeql-action/autobuild@v3
       - uses: github/codeql-action/analyze@v3

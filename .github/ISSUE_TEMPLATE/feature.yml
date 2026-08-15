@@ -1,0 +1,44 @@
+name: Feature or design proposal
+description: Propose a compatible LEP change.
+title: "[Proposal]: "
+labels:
+  - enhancement
+  - triage
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What interoperability gap, diagnostic need, or spec ambiguity cannot be handled well today?
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Concrete use case
+      description: Include the device type, failure mode, and why the current spec or codec is insufficient.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed direction
+      description: Describe the smallest useful change. TLV sketches and flag assignments are welcome but not required.
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and trade-offs
+      description: Consider wire compatibility, forward compatibility with existing vectors, consumer codec impact, and cryptographic boundaries.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to implement or test this proposal.
+        - label: This changes the wire format, registry, or crypto and should be discussed before implementation.
