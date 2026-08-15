@@ -29,8 +29,7 @@ points for Codex, Claude, Gemini, and GitHub Copilot.
 AI assistance does not substitute for contributor or maintainer judgment. Do
 not claim a version as released or compatible without a passing conformance run
 and an updated vector. Do not expose keys, memory captures, private collector
-details, endpoints, credentials, or proprietary firmware. The reusable task
-brief and review material is in [docs/ai/](docs/ai/README.md) (when available).
+details, endpoints, credentials, or proprietary firmware.
 
 ## Maintainer response target
 
