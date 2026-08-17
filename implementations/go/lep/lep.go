@@ -1,5 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
-// Package lep is a minimal LEP v1 reference codec.
+// Package lep implements LEP v1 validation, encoding, decoding, and crypto.
+//
+// LEP (Latch Event Protocol) is a binary envelope format for device telemetry.
+// This package provides the complete reference codec including:
+//   - Plain envelope encode/validate
+//   - AEAD encryption (XChaCha20-Poly1305 + HKDF-SHA256)
+//   - HMAC-SHA256 authentication
+//   - Replay window protection
+//   - zstd compression
+//   - TLV parsing and building
+//   - Latch Stream framing with COBS resync
+//   - LSAK control message handling
+//
+// The envelope format is:
+//
+//	LSTP | version | type | arch | flags | sequence | event_id | payload_len |
+//	header_crc | [meta] | payload | payload_crc | [tag/auth]
+//
+// Flags:
+//
+//	0x01 authenticated  0x02 encrypted  0x04 AEAD  0x08 truncated  0x10 compressed
 package lep
 
 import (
@@ -8,30 +28,55 @@ import (
 	"hash/crc32"
 )
 
+// Envelope constants.
 const (
 	HeaderSize      = 24
-	MaxEnvelopeSize = 4 << 20
+	MaxEnvelopeSize = 4 << 20 // 4 MiB
 	Magic           = "LSTP"
 	Version1        = 1
 
 	FlagAuthenticated uint8 = 1 << 0
 	FlagEncrypted     uint8 = 1 << 1
 	FlagAEAD          uint8 = 1 << 2
-	FlagTruncated     uint8 = 1 << 3
-	FlagCompressed    uint8 = 1 << 4
+	FlagTruncated     uint8 = 1 << 3 // optional fields omitted
+	FlagCompressed    uint8 = 1 << 4 // zstd of payload; devices do not set this
 	KnownFlags              = FlagAuthenticated | FlagEncrypted | FlagAEAD | FlagTruncated | FlagCompressed
 )
 
+// CRC32 constants.
 const (
-	TLVCPU64        uint16 = 16
-	TLVBlackbox     uint16 = 17
-	TLVMission      uint16 = 18
-	TLVTimeSync     uint16 = 19
-	TLVProvisioning uint16 = 20
-	TLVSupervisor   uint16 = 21
-	TLVEnvironment  uint16 = 22
+	CRC32IEEEPolynomial          uint32 = 0x04C11DB7
+	CRC32IEEEReflectedPolynomial uint32 = 0xEDB88320
 )
 
+// TLV type constants registered in the protocol registry.
+const (
+	TLVNone           uint16 = 0  // reserved
+	TLVSource         uint16 = 1  // device source identifier
+	TLVEpoch          uint16 = 2  // device epoch/timestamp
+	TLVVersion        uint16 = 3  // firmware version
+	TLVFirmwareHash   uint16 = 4  // firmware SHA-256
+	TLVHeartbeat      uint16 = 5  // device heartbeat
+	TLVStackPointer   uint16 = 6  // stack pointer value
+	TLVExceptionType  uint16 = 7  // exception/sci type
+	TLVExceptionAddr  uint16 = 8  // fault address
+	TLVExceptionInfo  uint16 = 9  // additional exception info
+	TLVRegisters      uint16 = 10 // general purpose registers
+	TLVBacktrace      uint16 = 11 // call backtrace
+	TLVMemoryUsage    uint16 = 12 // memory usage stats
+	TLVSystemState    uint16 = 13 // system state flags
+	TLVBatteryStatus  uint16 = 14 // battery level/voltage
+	TLVRadioStatus    uint16 = 15 // radio/link status
+	TLVCPU64          uint16 = 16 // CPU64 capability descriptor
+	TLVBlackbox       uint16 = 17 // blackbox event data
+	TLVMission        uint16 = 18 // mission/profile context
+	TLVTimeSync       uint16 = 19 // time synchronization
+	TLVProvisioning   uint16 = 20 // provisioning state
+	TLVSupervisor     uint16 = 21 // supervisor/debug state
+	TLVEnvironment    uint16 = 22 // environmental context
+)
+
+// Error kinds for validation failures.
 type ErrorKind string
 
 const (
@@ -40,6 +85,7 @@ const (
 	ErrorTooLarge    ErrorKind = "too_large"
 )
 
+// ValidationError describes a validation failure.
 type ValidationError struct {
 	Kind   ErrorKind
 	Field  string
@@ -53,102 +99,114 @@ func (e *ValidationError) Error() string {
 	return e.Field + ": " + e.Reason
 }
 
-type Header struct {
-	Version       uint8
-	Type          uint8
-	Architecture  uint8
-	Flags         uint8
-	Sequence      uint32
-	EventID       uint32
-	PayloadLength uint32
+// Envelope represents a validated LEP v1 envelope header.
+type Envelope struct {
+	Version       uint8  `json:"version"`
+	Type          uint8  `json:"type"`
+	Architecture  uint8  `json:"architecture"`
+	Flags         uint8  `json:"flags"`
+	Sequence      uint32 `json:"sequence"`
+	EventID       uint32 `json:"event_id"`
+	PayloadLength uint32 `json:"payload_length"`
 }
 
+// TLV represents a Type-Length-Value field in a LEP payload.
 type TLV struct {
-	Type  uint16
-	Value []byte
+	Type  uint16 `json:"type"`
+	Value []byte `json:"-"`
 }
 
-func Validate(data []byte) (Header, error) {
-	var h Header
+// Validate parses and validates a LEP envelope from raw bytes.
+func Validate(data []byte) (Envelope, error) {
+	var env Envelope
 	if len(data) > MaxEnvelopeSize {
-		return h, &ValidationError{Kind: ErrorTooLarge, Field: "envelope", Reason: "exceeds maximum"}
+		return env, &ValidationError{Kind: ErrorTooLarge, Field: "envelope", Reason: fmt.Sprintf("exceeds %d bytes", MaxEnvelopeSize)}
 	}
 	if len(data) < HeaderSize+4 {
-		return h, &ValidationError{Kind: ErrorCorrupt, Field: "envelope", Reason: "too short"}
+		return env, &ValidationError{Kind: ErrorCorrupt, Field: "envelope", Reason: "too short"}
 	}
 	if string(data[:4]) != Magic {
-		return h, &ValidationError{Kind: ErrorCorrupt, Field: "magic", Reason: "expected LSTP"}
+		return env, &ValidationError{Kind: ErrorCorrupt, Field: "magic", Reason: "expected LSTP"}
 	}
-	h = Header{
+	env = Envelope{
 		Version: data[4], Type: data[5], Architecture: data[6], Flags: data[7],
 		Sequence: binary.LittleEndian.Uint32(data[8:12]), EventID: binary.LittleEndian.Uint32(data[12:16]),
 		PayloadLength: binary.LittleEndian.Uint32(data[16:20]),
 	}
-	if h.Version != Version1 {
-		return h, &ValidationError{Kind: ErrorUnsupported, Field: "version", Reason: fmt.Sprintf("%d", h.Version)}
+	if env.Version != Version1 {
+		return env, &ValidationError{Kind: ErrorUnsupported, Field: "version", Reason: fmt.Sprintf("unsupported LEP version %d", env.Version)}
 	}
-	if h.Flags&^KnownFlags != 0 {
-		return h, &ValidationError{Kind: ErrorUnsupported, Field: "flags", Reason: fmt.Sprintf("0x%02x", h.Flags)}
+	if env.Flags&^uint8(KnownFlags) != 0 {
+		return env, &ValidationError{Kind: ErrorUnsupported, Field: "flags", Reason: fmt.Sprintf("unknown flags 0x%02x", env.Flags&^uint8(KnownFlags))}
 	}
-	if (h.Flags&FlagEncrypted != 0) != (h.Flags&FlagAEAD != 0) {
-		return h, &ValidationError{Kind: ErrorCorrupt, Field: "flags", Reason: "encrypted/AEAD mismatch"}
+	if (env.Flags&FlagEncrypted != 0) != (env.Flags&FlagAEAD != 0) {
+		return env, &ValidationError{Kind: ErrorCorrupt, Field: "flags", Reason: "encrypted and AEAD flags must be used together"}
 	}
-	if h.Flags&FlagAEAD != 0 && h.Flags&FlagAuthenticated == 0 {
-		return h, &ValidationError{Kind: ErrorCorrupt, Field: "flags", Reason: "AEAD requires authenticated"}
+	if env.Flags&FlagAEAD != 0 && env.Flags&FlagAuthenticated == 0 {
+		return env, &ValidationError{Kind: ErrorCorrupt, Field: "flags", Reason: "AEAD requires authenticated flag"}
 	}
 
-	metadata, auth := 0, 0
-	if h.Flags&FlagAEAD != 0 {
-		metadata, auth = 28, 16
-	} else if h.Flags&FlagAuthenticated != 0 {
-		auth = 32
+	metaLen, authLen := 0, 0
+	if env.Flags&FlagAEAD != 0 {
+		metaLen, authLen = 28, 16
+	} else if env.Flags&FlagAuthenticated != 0 {
+		authLen = 32
 	}
-	overhead := HeaderSize + metadata + 4 + auth
-	if len(data) < overhead || uint64(h.PayloadLength) != uint64(len(data)-overhead) {
-		return h, &ValidationError{Kind: ErrorCorrupt, Field: "payload_length", Reason: "size mismatch"}
+	overhead := HeaderSize + metaLen + 4 + authLen
+	if len(data) < overhead || uint64(env.PayloadLength) != uint64(len(data)-overhead) {
+		return env, &ValidationError{Kind: ErrorCorrupt, Field: "payload_length", Reason: "does not match envelope size"}
 	}
 	if binary.LittleEndian.Uint32(data[20:24]) != crc32.ChecksumIEEE(data[:20]) {
-		return h, &ValidationError{Kind: ErrorCorrupt, Field: "header_crc", Reason: "mismatch"}
+		return env, &ValidationError{Kind: ErrorCorrupt, Field: "header_crc", Reason: "CRC-32/IEEE mismatch"}
 	}
-	crcOff := HeaderSize + metadata + int(h.PayloadLength)
+	crcOff := HeaderSize + metaLen + int(env.PayloadLength)
+	if crcOff+4 > len(data) {
+		return env, &ValidationError{Kind: ErrorCorrupt, Field: "payload_crc", Reason: "missing checksum"}
+	}
 	if binary.LittleEndian.Uint32(data[crcOff:crcOff+4]) != crc32.ChecksumIEEE(data[HeaderSize:crcOff]) {
-		return h, &ValidationError{Kind: ErrorCorrupt, Field: "payload_crc", Reason: "mismatch"}
+		return env, &ValidationError{Kind: ErrorCorrupt, Field: "payload_crc", Reason: "CRC-32/IEEE mismatch"}
 	}
-	if h.Flags&FlagEncrypted == 0 && h.Flags&FlagCompressed == 0 {
-		if err := validateTLVs(data[HeaderSize+metadata : crcOff]); err != nil {
-			return h, err
+	// Plaintext TLVs only when not encrypted and not compressed.
+	if env.Flags&FlagEncrypted == 0 && env.Flags&FlagCompressed == 0 {
+		if err := validateTLVs(data[HeaderSize:crcOff]); err != nil {
+			return env, err
 		}
 	}
-	return h, nil
+	return env, nil
 }
 
 func validateTLVs(payload []byte) error {
 	for off := 0; off < len(payload); {
 		if len(payload)-off < 4 {
-			return &ValidationError{Kind: ErrorCorrupt, Field: "payload", Reason: "incomplete TLV"}
+			return &ValidationError{Kind: ErrorCorrupt, Field: "payload", Reason: "incomplete TLV header"}
 		}
 		t := binary.LittleEndian.Uint16(payload[off : off+2])
 		n := int(binary.LittleEndian.Uint16(payload[off+2 : off+4]))
 		off += 4
 		if t == 0 {
-			return &ValidationError{Kind: ErrorCorrupt, Field: "payload", Reason: "TLV type zero"}
+			return &ValidationError{Kind: ErrorCorrupt, Field: "payload", Reason: "TLV type zero is reserved"}
 		}
 		if n > len(payload)-off {
-			return &ValidationError{Kind: ErrorCorrupt, Field: "payload", Reason: "TLV overrun"}
+			return &ValidationError{Kind: ErrorCorrupt, Field: "payload", Reason: "TLV length exceeds payload"}
 		}
 		off += n
 	}
 	return nil
 }
 
-func Encode(h Header, payload []byte) ([]byte, error) {
+// Encode builds a plain (unauthenticated, unencrypted, uncompressed) LEP v1
+// envelope from header fields and TLV payload bytes.
+func Encode(h Envelope, payload []byte) ([]byte, error) {
 	if h.Version == 0 {
 		h.Version = Version1
 	}
 	if h.Version != Version1 {
 		return nil, &ValidationError{Kind: ErrorUnsupported, Field: "version", Reason: "not 1"}
 	}
-	if h.Flags&^(FlagTruncated) != 0 {
+	if len(payload) > MaxEnvelopeSize-HeaderSize-4 {
+		return nil, &ValidationError{Kind: ErrorTooLarge, Field: "payload", Reason: "exceeds maximum envelope size"}
+	}
+	if h.Flags&^FlagTruncated != 0 {
 		return nil, &ValidationError{Kind: ErrorUnsupported, Field: "flags", Reason: "plain encode only allows TRUNCATED"}
 	}
 	if err := validateTLVs(payload); err != nil && len(payload) > 0 {
@@ -169,18 +227,99 @@ func Encode(h Header, payload []byte) ([]byte, error) {
 	return raw, nil
 }
 
-func ParseTLVs(payload []byte) ([]TLV, error) {
-	if err := validateTLVs(payload); err != nil {
+// EncodeTLVs serializes TLV fields then encodes a plain envelope.
+func EncodeTLVs(h Envelope, fields []TLV) ([]byte, error) {
+	payload, err := MarshalTLVs(fields)
+	if err != nil {
 		return nil, err
 	}
-	var out []TLV
+	return Encode(h, payload)
+}
+
+// MarshalTLVs serializes TLV fields to payload bytes.
+func MarshalTLVs(fields []TLV) ([]byte, error) {
+	var payload []byte
+	for _, f := range fields {
+		if f.Type == 0 {
+			return nil, fmt.Errorf("TLV type zero is reserved")
+		}
+		if len(f.Value) > 0xffff {
+			return nil, fmt.Errorf("TLV %d value exceeds uint16 length", f.Type)
+		}
+		entry := make([]byte, 4+len(f.Value))
+		binary.LittleEndian.PutUint16(entry[0:2], f.Type)
+		binary.LittleEndian.PutUint16(entry[2:4], uint16(len(f.Value)))
+		copy(entry[4:], f.Value)
+		payload = append(payload, entry...)
+	}
+	return payload, nil
+}
+
+// TLVs returns the unencrypted, uncompressed payload fields after validation.
+func TLVs(data []byte) ([]TLV, error) {
+	env, err := Validate(data)
+	if err != nil {
+		return nil, err
+	}
+	if env.Flags&FlagEncrypted != 0 {
+		return nil, fmt.Errorf("encrypted LEP payload cannot be decoded without a key")
+	}
+	if env.Flags&FlagAuthenticated != 0 {
+		return nil, fmt.Errorf("authenticated LEP payload cannot be decoded without a key")
+	}
+	if env.Flags&FlagCompressed != 0 {
+		return nil, fmt.Errorf("compressed LEP payload cannot be decoded without a configured codec")
+	}
+	payload := data[HeaderSize : HeaderSize+int(env.PayloadLength)]
+	return parseTLVs(payload)
+}
+
+func parseTLVs(payload []byte) ([]TLV, error) {
+	fields := make([]TLV, 0)
 	for off := 0; off < len(payload); {
+		if len(payload)-off < 4 {
+			return nil, &ValidationError{Kind: ErrorCorrupt, Field: "payload", Reason: "incomplete TLV"}
+		}
 		t := binary.LittleEndian.Uint16(payload[off : off+2])
 		n := int(binary.LittleEndian.Uint16(payload[off+2 : off+4]))
 		off += 4
-		val := append([]byte(nil), payload[off:off+n]...)
-		out = append(out, TLV{Type: t, Value: val})
+		if n > len(payload)-off {
+			return nil, &ValidationError{Kind: ErrorCorrupt, Field: "payload", Reason: "TLV length exceeds payload"}
+		}
+		fields = append(fields, TLV{Type: t, Value: append([]byte(nil), payload[off:off+n]...)})
 		off += n
 	}
-	return out, nil
+	return fields, nil
+}
+
+// ParseTLVs parses TLV fields from a payload byte slice.
+func ParseTLVs(payload []byte) ([]TLV, error) {
+	return parseTLVs(payload)
+}
+
+// TLVSet is a helper for building TLV payloads with named accessors.
+type TLVSet map[uint16][]byte
+
+// Add inserts or replaces a TLV in the set.
+func (s TLVSet) Add(t uint16, value []byte) {
+	s[t] = append([]byte(nil), value...)
+}
+
+// Get retrieves a TLV value by type.
+func (s TLVSet) Get(t uint16) []byte {
+	return s[t]
+}
+
+// Marshal serializes the set into TLV payload bytes.
+func (s TLVSet) Marshal() ([]byte, error) {
+	return MarshalTLVs(ToSlice(s))
+}
+
+// ToSlice converts a TLVSet to a slice of TLVs.
+func ToSlice(s TLVSet) []TLV {
+	out := make([]TLV, 0, len(s))
+	for t, v := range s {
+		out = append(out, TLV{Type: t, Value: v})
+	}
+	return out
 }

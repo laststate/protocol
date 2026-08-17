@@ -2,6 +2,13 @@
 
 Device and firmware identity for symbolication, tenancy, and deduplication.
 
+**Status:** Final
+**Version:** 1.0.0
+**Date:** 2026-08-16
+**LEP Version:** 1.0
+
+**This spec is frozen as of LEP v1.0.0. No backward-incompatible changes will be made.**
+
 ## Header vs payload
 
 | Field | Where in v1 |
