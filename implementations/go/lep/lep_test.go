@@ -122,125 +122,36 @@ func TestInvalid(t *testing.T) {
 	}
 }
 
-func TestTLVTypesExported(t *testing.T) {
-	// Verify all 22 TLV types are exported as constants.
-	expected := []struct {
-		name string
-		val  uint16
-	}{
-		{"TLVNone", 0}, {"TLVSource", 1}, {"TLVEpoch", 2}, {"TLVVersion", 3},
-		{"TLVFirmwareHash", 4}, {"TLVHeartbeat", 5}, {"TLVStackPointer", 6},
-		{"TLVExceptionType", 7}, {"TLVExceptionAddr", 8}, {"TLVExceptionInfo", 9},
-		{"TLVRegisters", 10}, {"TLVBacktrace", 11}, {"TLVMemoryUsage", 12},
-		{"TLVSystemState", 13}, {"TLVBatteryStatus", 14}, {"TLVRadioStatus", 15},
-		{"TLVCPU64", 16}, {"TLVBlackbox", 17}, {"TLVMission", 18}, {"TLVTimeSync", 19},
-		{"TLVProvisioning", 20}, {"TLVSupervisor", 21}, {"TLVEnvironment", 22},
+func TestTLVTypesRegistryValues(t *testing.T) {
+	expected := map[string]uint16{
+		"TLVIdentity": 1, "TLVReset": 2, "TLVEvent": 3, "TLVCpu": 4,
+		"TLVFault": 5, "TLVBreadcrumb": 6, "TLVMetric": 7, "TLVPower": 8,
+		"TLVHealth": 9, "TLVAssert": 10, "TLVPeripheral": 11, "TLVLog": 12,
+		"TLVMemory": 13, "TLVStack": 14, "TLVHeap": 15, "TLVCPU64": 16,
+		"TLVBlackbox": 17, "TLVMission": 18, "TLVTimeSync": 19,
+		"TLVProvisioning": 20, "TLVSupervisor": 21, "TLVEnvironment": 22,
 	}
-	for _, e := range expected {
-		t.Run(e.name, func(t *testing.T) {
-			// Verify the constant value is set correctly.
-			switch e.name {
-			case "TLVNone":
-				if lep.TLVNone != e.val {
-					t.Errorf("TLVNone = %d, want %d", lep.TLVNone, e.val)
-				}
-			case "TLVSource":
-				if lep.TLVSource != e.val {
-					t.Errorf("TLVSource = %d, want %d", lep.TLVSource, e.val)
-				}
-			case "TLVEpoch":
-				if lep.TLVEpoch != e.val {
-					t.Errorf("TLVEpoch = %d, want %d", lep.TLVEpoch, e.val)
-				}
-			case "TLVVersion":
-				if lep.TLVVersion != e.val {
-					t.Errorf("TLVVersion = %d, want %d", lep.TLVVersion, e.val)
-				}
-			case "TLVFirmwareHash":
-				if lep.TLVFirmwareHash != e.val {
-					t.Errorf("TLVFirmwareHash = %d, want %d", lep.TLVFirmwareHash, e.val)
-				}
-			case "TLVHeartbeat":
-				if lep.TLVHeartbeat != e.val {
-					t.Errorf("TLVHeartbeat = %d, want %d", lep.TLVHeartbeat, e.val)
-				}
-			case "TLVStackPointer":
-				if lep.TLVStackPointer != e.val {
-					t.Errorf("TLVStackPointer = %d, want %d", lep.TLVStackPointer, e.val)
-				}
-			case "TLVExceptionType":
-				if lep.TLVExceptionType != e.val {
-					t.Errorf("TLVExceptionType = %d, want %d", lep.TLVExceptionType, e.val)
-				}
-			case "TLVExceptionAddr":
-				if lep.TLVExceptionAddr != e.val {
-					t.Errorf("TLVExceptionAddr = %d, want %d", lep.TLVExceptionAddr, e.val)
-				}
-			case "TLVExceptionInfo":
-				if lep.TLVExceptionInfo != e.val {
-					t.Errorf("TLVExceptionInfo = %d, want %d", lep.TLVExceptionInfo, e.val)
-				}
-			case "TLVRegisters":
-				if lep.TLVRegisters != e.val {
-					t.Errorf("TLVRegisters = %d, want %d", lep.TLVRegisters, e.val)
-				}
-			case "TLVBacktrace":
-				if lep.TLVBacktrace != e.val {
-					t.Errorf("TLVBacktrace = %d, want %d", lep.TLVBacktrace, e.val)
-				}
-			case "TLVMemoryUsage":
-				if lep.TLVMemoryUsage != e.val {
-					t.Errorf("TLVMemoryUsage = %d, want %d", lep.TLVMemoryUsage, e.val)
-				}
-			case "TLVSystemState":
-				if lep.TLVSystemState != e.val {
-					t.Errorf("TLVSystemState = %d, want %d", lep.TLVSystemState, e.val)
-				}
-			case "TLVBatteryStatus":
-				if lep.TLVBatteryStatus != e.val {
-					t.Errorf("TLVBatteryStatus = %d, want %d", lep.TLVBatteryStatus, e.val)
-				}
-			case "TLVRadioStatus":
-				if lep.TLVRadioStatus != e.val {
-					t.Errorf("TLVRadioStatus = %d, want %d", lep.TLVRadioStatus, e.val)
-				}
-			case "TLVCPU64":
-				if lep.TLVCPU64 != e.val {
-					t.Errorf("TLVCPU64 = %d, want %d", lep.TLVCPU64, e.val)
-				}
-			case "TLVBlackbox":
-				if lep.TLVBlackbox != e.val {
-					t.Errorf("TLVBlackbox = %d, want %d", lep.TLVBlackbox, e.val)
-				}
-			case "TLVMission":
-				if lep.TLVMission != e.val {
-					t.Errorf("TLVMission = %d, want %d", lep.TLVMission, e.val)
-				}
-			case "TLVTimeSync":
-				if lep.TLVTimeSync != e.val {
-					t.Errorf("TLVTimeSync = %d, want %d", lep.TLVTimeSync, e.val)
-				}
-			case "TLVProvisioning":
-				if lep.TLVProvisioning != e.val {
-					t.Errorf("TLVProvisioning = %d, want %d", lep.TLVProvisioning, e.val)
-				}
-			case "TLVSupervisor":
-				if lep.TLVSupervisor != e.val {
-					t.Errorf("TLVSupervisor = %d, want %d", lep.TLVSupervisor, e.val)
-				}
-			case "TLVEnvironment":
-				if lep.TLVEnvironment != e.val {
-					t.Errorf("TLVEnvironment = %d, want %d", lep.TLVEnvironment, e.val)
-				}
-			}
-		})
+	values := map[string]uint16{
+		"TLVIdentity": lep.TLVIdentity, "TLVReset": lep.TLVReset, "TLVEvent": lep.TLVEvent,
+		"TLVCpu": lep.TLVCpu, "TLVFault": lep.TLVFault, "TLVBreadcrumb": lep.TLVBreadcrumb,
+		"TLVMetric": lep.TLVMetric, "TLVPower": lep.TLVPower, "TLVHealth": lep.TLVHealth,
+		"TLVAssert": lep.TLVAssert, "TLVPeripheral": lep.TLVPeripheral, "TLVLog": lep.TLVLog,
+		"TLVMemory": lep.TLVMemory, "TLVStack": lep.TLVStack, "TLVHeap": lep.TLVHeap,
+		"TLVCPU64": lep.TLVCPU64, "TLVBlackbox": lep.TLVBlackbox, "TLVMission": lep.TLVMission,
+		"TLVTimeSync": lep.TLVTimeSync, "TLVProvisioning": lep.TLVProvisioning,
+		"TLVSupervisor": lep.TLVSupervisor, "TLVEnvironment": lep.TLVEnvironment,
+	}
+	for name, want := range expected {
+		if got := values[name]; got != want {
+			t.Errorf("%s = %d, want %d", name, got, want)
+		}
 	}
 }
 
 func TestEncodeTLVs(t *testing.T) {
 	fields := []lep.TLV{
-		{Type: lep.TLVSource, Value: []byte("device-001")},
-		{Type: lep.TLVHeartbeat, Value: []byte{0x01}},
+		{Type: lep.TLVIdentity, Value: []byte("device-001")},
+		{Type: lep.TLVHealth, Value: []byte{0x01}},
 	}
 	raw, err := lep.EncodeTLVs(lep.Envelope{Version: 1, Type: 1, Sequence: 1, EventID: 1}, fields)
 	if err != nil {
@@ -260,15 +171,15 @@ func TestEncodeTLVs(t *testing.T) {
 	if len(got) != 2 {
 		t.Fatalf("expected 2 TLVs, got %d", len(got))
 	}
-	if got[0].Type != lep.TLVSource || string(got[0].Value) != "device-001" {
+	if got[0].Type != lep.TLVIdentity || string(got[0].Value) != "device-001" {
 		t.Errorf("unexpected first TLV: %v", got[0])
 	}
 }
 
 func TestTLVSetBuilder(t *testing.T) {
 	set := lep.TLVSet{}
-	set.Add(lep.TLVSource, []byte("test"))
-	set.Add(lep.TLVHeartbeat, []byte{0x01})
+	set.Add(lep.TLVIdentity, []byte("test"))
+	set.Add(lep.TLVHealth, []byte{0x01})
 	payload, err := set.Marshal()
 	if err != nil {
 		t.Fatal(err)
@@ -280,8 +191,8 @@ func TestTLVSetBuilder(t *testing.T) {
 	if len(fields) != 2 {
 		t.Fatalf("expected 2 TLVs, got %d", len(fields))
 	}
-	if string(set.Get(lep.TLVSource)) != "test" {
-		t.Errorf("TLVSet.Get(TLVSource) = %q", set.Get(lep.TLVSource))
+	if string(set.Get(lep.TLVIdentity)) != "test" {
+		t.Errorf("TLVSet.Get(TLVIdentity) = %q", set.Get(lep.TLVIdentity))
 	}
 }
 

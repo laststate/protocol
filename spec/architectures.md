@@ -9,7 +9,8 @@ Header `architecture` (u8):
 | 2 | riscv |
 | 3 | xtensa |
 | 4 | linux |
-| ≥5 | future (e.g. arm-a) — allocate via RFC |
+| 5 | riscv64 |
+| ≥6 | future — allocate via RFC |
 
 ## CPU TLV (type 4) — Latch multi-arch container
 

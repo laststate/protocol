@@ -51,29 +51,29 @@ const (
 
 // TLV type constants registered in the protocol registry.
 const (
-	TLVNone           uint16 = 0  // reserved
-	TLVSource         uint16 = 1  // device source identifier
-	TLVEpoch          uint16 = 2  // device epoch/timestamp
-	TLVVersion        uint16 = 3  // firmware version
-	TLVFirmwareHash   uint16 = 4  // firmware SHA-256
-	TLVHeartbeat      uint16 = 5  // device heartbeat
-	TLVStackPointer   uint16 = 6  // stack pointer value
-	TLVExceptionType  uint16 = 7  // exception/sci type
-	TLVExceptionAddr  uint16 = 8  // fault address
-	TLVExceptionInfo  uint16 = 9  // additional exception info
-	TLVRegisters      uint16 = 10 // general purpose registers
-	TLVBacktrace      uint16 = 11 // call backtrace
-	TLVMemoryUsage    uint16 = 12 // memory usage stats
-	TLVSystemState    uint16 = 13 // system state flags
-	TLVBatteryStatus  uint16 = 14 // battery level/voltage
-	TLVRadioStatus    uint16 = 15 // radio/link status
-	TLVCPU64          uint16 = 16 // CPU64 capability descriptor
-	TLVBlackbox       uint16 = 17 // blackbox event data
-	TLVMission        uint16 = 18 // mission/profile context
-	TLVTimeSync       uint16 = 19 // time synchronization
-	TLVProvisioning   uint16 = 20 // provisioning state
-	TLVSupervisor     uint16 = 21 // supervisor/debug state
-	TLVEnvironment    uint16 = 22 // environmental context
+	TLVNone         uint16 = 0  // reserved
+	TLVIdentity     uint16 = 1  // device identity (nested string fields)
+	TLVReset        uint16 = 2  // boot/reset block
+	TLVEvent        uint16 = 3  // event metadata
+	TLVCpu          uint16 = 4  // multi-arch CPU context
+	TLVFault        uint16 = 5  // fault registers
+	TLVBreadcrumb   uint16 = 6  // repeatable breadcrumb
+	TLVMetric       uint16 = 7  // repeatable metric
+	TLVPower        uint16 = 8  // power samples
+	TLVHealth       uint16 = 9  // watchdog/task health
+	TLVAssert       uint16 = 10 // assertion
+	TLVPeripheral   uint16 = 11 // peripheral/bus faults
+	TLVLog          uint16 = 12 // structured log
+	TLVMemory       uint16 = 13 // memory dump regions
+	TLVStack        uint16 = 14 // stack snapshot
+	TLVHeap         uint16 = 15 // heap stats
+	TLVCPU64        uint16 = 16 // CPU64 capability descriptor
+	TLVBlackbox     uint16 = 17 // blackbox event data
+	TLVMission      uint16 = 18 // mission/profile context
+	TLVTimeSync     uint16 = 19 // time synchronization
+	TLVProvisioning uint16 = 20 // provisioning state
+	TLVSupervisor   uint16 = 21 // supervisor/debug state
+	TLVEnvironment  uint16 = 22 // environmental context
 )
 
 // Error kinds for validation failures.

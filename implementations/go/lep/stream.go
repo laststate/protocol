@@ -13,12 +13,12 @@ import (
 
 // Stream framing constants.
 const (
-	LSHeaderSize     = 8
-	LSTailSize       = 4
-	LSAckMagic       = "LSAK"
-	LSAckVersion     = 1
-	LSAckSize        = 12
-	LSAckStored      uint8 = iota + 1
+	LSHeaderSize       = 8
+	LSTailSize         = 4
+	LSAckMagic         = "LSAK"
+	LSAckVersion       = 1
+	LSAckSize          = 12
+	LSAckStored  uint8 = iota + 1
 	LSAckDuplicate
 	LSAckNackCorrupt
 	LSAckNackUnsupported
@@ -30,14 +30,14 @@ const (
 
 // LSAK status codes (1-indexed).
 const (
-	LSAckStatusStored      = LSAckStored
-	LSAckStatusDuplicate   = LSAckDuplicate
-	LSAckStatusNackCorrupt = LSAckNackCorrupt
-	LSAckStatusNackUnsupported = LSAckNackUnsupported
-	LSAckStatusNackBusy    = LSAckNackBusy
-	LSAckStatusNackTooLarge = LSAckNackTooLarge
+	LSAckStatusStored           = LSAckStored
+	LSAckStatusDuplicate        = LSAckDuplicate
+	LSAckStatusNackCorrupt      = LSAckNackCorrupt
+	LSAckStatusNackUnsupported  = LSAckNackUnsupported
+	LSAckStatusNackBusy         = LSAckNackBusy
+	LSAckStatusNackTooLarge     = LSAckNackTooLarge
 	LSAckStatusNackUnauthorized = LSAckNackUnauthorized
-	LSAckStatusNackInternal = LSAckNackInternal
+	LSAckStatusNackInternal     = LSAckNackInternal
 )
 
 // EncodeLatchStream wraps a LEP envelope in Latch Stream framing.
@@ -103,7 +103,7 @@ func EncodeLSAK(eventID uint32, status uint8) []byte {
 // byte stream, with COBS-style resync on corrupt frames and fragment reassembly
 // for envelopes split across multiple stream frames.
 type LatchStream struct {
-	r        io.Reader
+	r io.Reader
 	// buf accumulates bytes between stream frame boundaries.
 	buf []byte
 	// maxEnvelope is the maximum allowed envelope size (default MaxEnvelopeSize).
@@ -121,8 +121,8 @@ func NewLatchStream(r io.Reader, maxEnvelope int) *LatchStream {
 		maxEnvelope = MaxEnvelopeSize
 	}
 	return &LatchStream{
-		r:                r,
-		maxEnvelope:      maxEnvelope,
+		r:                 r,
+		maxEnvelope:       maxEnvelope,
 		maxFragmentedSize: maxEnvelope,
 	}
 }

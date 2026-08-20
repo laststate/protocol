@@ -27,11 +27,11 @@
 //
 // # Flags
 //
-//	  0x01 - Authenticated (HMAC-SHA256)
-//	  0x02 - Encrypted (XChaCha20-Poly1305)
-//	  0x04 - AEAD mode (requires 0x01 and 0x02)
-//	  0x08 - Truncated (optional fields omitted)
-//	  0x10 - Compressed (zstd)
+//	0x01 - Authenticated (HMAC-SHA256)
+//	0x02 - Encrypted (XChaCha20-Poly1305)
+//	0x04 - AEAD mode (requires 0x01 and 0x02)
+//	0x08 - Truncated (optional fields omitted)
+//	0x10 - Compressed (zstd)
 //
 // # TLV Types
 //

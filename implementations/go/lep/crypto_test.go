@@ -394,8 +394,8 @@ func TestLSAKEncodeDecode(t *testing.T) {
 func TestDecodeTLVs(t *testing.T) {
 	// Create a plain envelope with TLVs.
 	fields := []lep.TLV{
-		{Type: lep.TLVSource, Value: []byte("device-001")},
-		{Type: lep.TLVHeartbeat, Value: []byte{0x01}},
+		{Type: lep.TLVIdentity, Value: []byte("device-001")},
+		{Type: lep.TLVHealth, Value: []byte{0x01}},
 	}
 	plain, err := lep.EncodeTLVs(lep.Envelope{Version: 1, Type: 1}, fields)
 	if err != nil {

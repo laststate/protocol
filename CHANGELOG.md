@@ -15,6 +15,9 @@ All notable changes to the Last State Protocol (LEP).
 ### Changed
 - Registry: 22 registered TLV types (was 18)
 - Spec: compression flag (zstd) with bounded-decompress contract
+- Go codec: renamed TLV type constants to match the registry names (e.g. `TLVSource`→`TLVIdentity`, `TLVHeartbeat`→`TLVFault`) — values unchanged
+- Spec: documented architecture code `5 = riscv64` (was unallocated)
+- Added `.gitattributes` enforcing LF line endings
 
 ## [1.0.0] — 2026-07-29
 

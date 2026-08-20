@@ -2,7 +2,7 @@
 
 ## Current
 
-- LEP v1.0.0 wire format with 22 registered TLV types
+- LEP v1.1.0 wire format with 22 registered TLV types
 - CRC-32/IEEE integrity, HMAC-SHA-256 and XChaCha20-Poly1305 authenticity
 - Stream framing with COBS, LSAK acknowledgement, and fragmentation
 - Reference Go codec with full golden-vector coverage

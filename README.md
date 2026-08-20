@@ -8,7 +8,7 @@ diagnostics between devices, gateways, and servers.
 [![Go Reference](https://img.shields.io/badge/go-reference-1.22+-007D9C.svg)](implementations/go)
 [![Python Conformance](https://img.shields.io/badge/python-conformance-3.10+-3776AB.svg)](conformance)
 
-**v1.0.0** — [`VERSION`](VERSION)
+**v1.1.0** — [`VERSION`](VERSION)
 
 When Latch, Relay, Trace, or third-party code disagree on bytes, **this repo
 wins**.
