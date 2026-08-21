@@ -9,7 +9,8 @@ details, or production endpoint credentials.
 
 | Version | Supported |
 | --- | --- |
-| 1.x | Yes |
+| 2.x | Yes (current) |
+| 1.x | Yes (decoders accept v1 and v2) |
 | Earlier versions | No |
 
 ## Cryptographic design
@@ -20,6 +21,9 @@ and the full 128-bit tag. The fixed header, nonce, and `key_id` are
 authenticated as AAD. HKDF-SHA-256 derives domain-separated, per-envelope keys
 from the provisioned master key, `key_id`, sequence, and event ID. Decryption
 authenticates before writing plaintext and comparisons are constant-time.
+HKDF info labels are wire-version bound (`laststate/latch/envelope/v1` and
+`laststate/latch/envelope/v2`), so a v1 seal can never verify as v2 and keys are
+never reused across wire versions.
 
 The older HMAC-SHA-256 envelope format remains supported for verification only
 unless `allow_legacy_hmac` is explicitly enabled by the consumer. Raw ChaCha20

@@ -8,7 +8,7 @@ diagnostics between devices, gateways, and servers.
 [![Go Reference](https://img.shields.io/badge/go-reference-1.22+-007D9C.svg)](implementations/go)
 [![Python Conformance](https://img.shields.io/badge/python-conformance-3.10+-3776AB.svg)](conformance)
 
-**v1.1.0** — [`VERSION`](VERSION)
+**v2.0.0** — [`VERSION`](VERSION)
 
 When Latch, Relay, Trace, or third-party code disagree on bytes, **this repo
 wins**.
@@ -29,7 +29,7 @@ codecs.
 | Payload | TLV `u16 type` + `u16 length` + value |
 | Flags | AUTH, ENC, AEAD, TRUNCATED, COMPRESSED (bit 4) |
 
-Full layout: [`spec/lep-v1.md`](spec/lep-v1.md)
+Full layout: [`spec/lep-v1.md`](spec/lep-v1.md), [`spec/lep-v2.md`](spec/lep-v2.md)
 
 ## Repository
 
@@ -43,7 +43,8 @@ conformance/runner/   Vector checker
 
 | Doc | Topic |
 |-----|--------|
-| [spec/lep-v1.md](spec/lep-v1.md) | Header, flags, validation |
+| [spec/lep-v1.md](spec/lep-v1.md) | Header, flags, validation (v1) |
+| [spec/lep-v2.md](spec/lep-v2.md) | v2 wire format, version-bound crypto |
 | [spec/integrity.md](spec/integrity.md) | CRC |
 | [spec/identity.md](spec/identity.md) | Device / build identity |
 | [spec/encryption.md](spec/encryption.md) | HMAC / XChaCha AEAD |

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Package lep implements LEP v1 validation, encoding, decoding, and crypto.
+// Package lep implements LEP v1/v2 validation, encoding, decoding, and crypto.
 //
 // LEP (Latch Event Protocol) is a binary envelope format for device telemetry.
 // This package provides the complete reference codec including:
@@ -20,6 +20,11 @@
 // Flags:
 //
 //	0x01 authenticated  0x02 encrypted  0x04 AEAD  0x08 truncated  0x10 compressed
+//
+// Wire versions: v1 (Version1) and v2 (Version2). Encoders emit Version2 by
+// default; validators accept both so existing v1 envelopes keep decoding.
+// HKDF domain-separated labels are version-bound (see crypto.go), preventing
+// cross-version key-confusion.
 package lep
 
 import (
@@ -34,6 +39,7 @@ const (
 	MaxEnvelopeSize = 4 << 20 // 4 MiB
 	Magic           = "LSTP"
 	Version1        = 1
+	Version2        = 2
 
 	FlagAuthenticated uint8 = 1 << 0
 	FlagEncrypted     uint8 = 1 << 1
@@ -133,7 +139,7 @@ func Validate(data []byte) (Envelope, error) {
 		Sequence: binary.LittleEndian.Uint32(data[8:12]), EventID: binary.LittleEndian.Uint32(data[12:16]),
 		PayloadLength: binary.LittleEndian.Uint32(data[16:20]),
 	}
-	if env.Version != Version1 {
+	if env.Version != Version1 && env.Version != Version2 {
 		return env, &ValidationError{Kind: ErrorUnsupported, Field: "version", Reason: fmt.Sprintf("unsupported LEP version %d", env.Version)}
 	}
 	if env.Flags&^uint8(KnownFlags) != 0 {
@@ -194,14 +200,15 @@ func validateTLVs(payload []byte) error {
 	return nil
 }
 
-// Encode builds a plain (unauthenticated, unencrypted, uncompressed) LEP v1
-// envelope from header fields and TLV payload bytes.
+// Encode builds a plain (unauthenticated, unencrypted, uncompressed) LEP
+// envelope from header fields and TLV payload bytes. The default wire version
+// is Version2; Version1 is accepted for producing legacy envelopes.
 func Encode(h Envelope, payload []byte) ([]byte, error) {
 	if h.Version == 0 {
-		h.Version = Version1
+		h.Version = Version2
 	}
-	if h.Version != Version1 {
-		return nil, &ValidationError{Kind: ErrorUnsupported, Field: "version", Reason: "not 1"}
+	if h.Version != Version1 && h.Version != Version2 {
+		return nil, &ValidationError{Kind: ErrorUnsupported, Field: "version", Reason: "not 1 or 2"}
 	}
 	if len(payload) > MaxEnvelopeSize-HeaderSize-4 {
 		return nil, &ValidationError{Kind: ErrorTooLarge, Field: "payload", Reason: "exceeds maximum envelope size"}

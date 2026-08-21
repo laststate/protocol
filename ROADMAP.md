@@ -2,10 +2,14 @@
 
 ## Current
 
-- LEP v1.1.0 wire format with 22 registered TLV types
+- LEP v2.0.0 wire version (`spec/lep-v2.md`): identical layout to v1, default
+  emit version for new producers; decoders accept both v1 and v2
+- 22 registered TLV types
 - CRC-32/IEEE integrity, HMAC-SHA-256 and XChaCha20-Poly1305 authenticity
+- Version-bound HKDF info labels (`.../envelope/v1`, `.../envelope/v2`) that
+  prevent cross-version key reuse
 - Stream framing with COBS, LSAK acknowledgement, and fragmentation
-- Reference Go codec with full golden-vector coverage
+- Reference Go codec with full golden-vector coverage (84.7%)
 - Python conformance runner for cross-language validation
 - Architecture codes for Cortex-M, RV32/RV64, Xtensa, and Linux signal capture
 
@@ -33,14 +37,14 @@ still pass the v1 conformance suite.
 
 ## Open questions
 
-- LEP v2 planning: how to evolve without breaking v1 conformance
 - Public TLV registry governance and external assignment process
 - Interoperability testing matrix across Go, C, Rust, and embedded codecs
 - Formal verification of framing and TLV parsing invariants
 
-## v2.0.0 (planned)
+## Next (post-v2.0.0)
 
 See [`spec/compatibility.md`](spec/compatibility.md) for versioning policy.
-A v2 release requires: a new magic or header revision, a documented migration
-path from v1, and a separate conformance suite. Until then, all changes extend
-v1 additively.
+v2.0.0 shipped as an additive wire version (v1 and v2 decode side by side). Any
+future breaking revision requires a new magic or header revision, a documented
+migration path, and a separate conformance suite; until then all changes remain
+additive.

@@ -1,17 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 Last State contributors
 
-// Package lep implements the Latch Event Protocol (LEP) v1 reference codec.
+// Package lep implements the Latch Event Protocol (LEP) reference codec.
 //
 // LEP is a binary envelope format for device telemetry used by the Latch
 // platform. It supports authentication (HMAC-SHA256), encryption (XChaCha20-Poly1305),
 // compression (zstd), and replay protection.
 //
+// Wire versions: v1 and v2 are accepted on decode; Encode emits v2 by
+// default. Version-bound HKDF info labels prevent cross-version key reuse.
+//
 // # Envelope Format
 //
 //	A LEP envelope consists of:
 //	  - 4-byte magic ("LSTP")
-//	  - 1-byte version
+//	  - 1-byte version (1 or 2)
 //	  - 1-byte event type
 //	  - 1-byte architecture
 //	  - 1-byte flags
@@ -40,10 +43,10 @@
 //
 // # Crypto
 //
-//	Key derivation uses HKDF-SHA256 with domain-separated info strings:
-//	  - Envelope key: "laststate/latch/envelope/v1"
-//	  - Auth key:    "laststate/latch/auth/v1"
-//	  - Stream key:  "laststate/latch/stream/v1"
+//	Key derivation uses HKDF-SHA256 with domain-separated info strings.
+//	The info label is bound to the wire version:
+//	  - v1 envelope key: "laststate/latch/envelope/v1"
+//	  - v2 envelope key: "laststate/latch/envelope/v2"
 //
 //	Salt for envelope keys is: key_id(4) || sequence(4) || event_id(4), all LE.
 //

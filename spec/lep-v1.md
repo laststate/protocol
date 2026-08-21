@@ -65,6 +65,7 @@ Implementations MUST compare the four bytes, not a host-endian integer constant 
 | Value | Meaning |
 |------:|---------|
 | 1 | LEP v1 Core (this document) |
+| 2 | LEP v2 Core ([`lep-v2.md`](lep-v2.md)) — identical wire, version-bound KDF label |
 | other | Unsupported — receiver MUST reject |
 
 Future compatible additions use the same major version only when the fixed header layout and semantics of existing fields remain unchanged. See [`compatibility.md`](compatibility.md).

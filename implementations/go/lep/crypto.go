@@ -16,18 +16,19 @@ import (
 	"golang.org/x/crypto/chacha20poly1305"
 )
 
-// LEP v1 crypto (device path):
+// LEP v1/v2 crypto (device path):
 //
 //	AEAD meta: nonce[24] || key_id u32 LE
 //	AAD: header[24] || meta[28]
-//	Key: HKDF-SHA256(salt=key_id||seq||event_id, ikm, info="laststate/latch/envelope/v1")
+//	Key: HKDF-SHA256(salt=key_id||seq||event_id, ikm, info="laststate/latch/envelope/vN")
 //	HMAC: over header||payload||payload_crc
 //
-// Domain-separated labels for HKDF expansion:
+// Domain-separated labels for HKDF expansion (version-bound so v1 and v2
+// envelopes derive distinct keys and cannot be cross-version confused):
 //
-//	envelope: "laststate/latch/envelope/v1"
-//	auth:    "laststate/latch/auth/v1"
-//	stream:  "laststate/latch/stream/v1"
+//	envelope: "laststate/latch/envelope/v1" | "laststate/latch/envelope/v2"
+//	auth:    "laststate/latch/auth/v1" | "laststate/latch/auth/v2"
+//	stream:  "laststate/latch/stream/v1" | "laststate/latch/stream/v2"
 
 const (
 	AEADMetadataSize = 28
@@ -38,10 +39,19 @@ const (
 )
 
 var (
-	envelopeHKDFInfo = []byte("laststate/latch/envelope/v1")
-	authHKDFInfo     = []byte("laststate/latch/auth/v1")
-	streamHKDFInfo   = []byte("laststate/latch/stream/v1")
+	envelopeHKDFInfoV1 = []byte("laststate/latch/envelope/v1")
+	envelopeHKDFInfoV2 = []byte("laststate/latch/envelope/v2")
 )
+
+// hkdfInfoForVersion returns the domain-separated HKDF info label bound to a
+// wire version. Unknown versions fall back to the v2 label so that forward
+// decryption is deterministic.
+func hkdfInfoForVersion(version uint8, infoV1, infoV2 []byte) []byte {
+	if version == Version1 {
+		return infoV1
+	}
+	return infoV2
+}
 
 // Key is a 32-byte IKM with a numeric device key id (Latch u32) and optional 8-byte label.
 type Key struct {
@@ -166,17 +176,25 @@ func hkdfSHA256(salt, ikm, info []byte, length int) ([]byte, error) {
 	return out, nil
 }
 
-func deriveEnvelopeKey(ikm []byte, keyID, sequence, eventID uint32) ([]byte, error) {
+func deriveEnvelopeKey(ikm []byte, keyID, sequence, eventID uint32, version uint8) ([]byte, error) {
 	salt := make([]byte, 12)
 	binary.LittleEndian.PutUint32(salt[0:4], keyID)
 	binary.LittleEndian.PutUint32(salt[4:8], sequence)
 	binary.LittleEndian.PutUint32(salt[8:12], eventID)
-	return hkdfSHA256(salt, ikm, envelopeHKDFInfo, 32)
+	return hkdfSHA256(salt, ikm, hkdfInfoForVersion(version, envelopeHKDFInfoV1, envelopeHKDFInfoV2), 32)
 }
 
 // Seal encrypts and/or authenticates a plain validated envelope (Latch device path).
 // plain must be a plain envelope (flags only TRUNCATED and/or COMPRESSED allowed).
 func Seal(plain []byte, ring Keyring, encrypt bool) ([]byte, error) {
+	return SealWithNonce(plain, ring, encrypt, nil)
+}
+
+// SealWithNonce is Seal with a caller-provided 24-byte nonce, used for
+// reproducible envelopes (golden vectors, deterministic tests). A nil nonce
+// draws a fresh CSPRNG nonce, equivalent to Seal. Callers MUST NOT reuse a
+// nonce under the same (derived key).
+func SealWithNonce(plain []byte, ring Keyring, encrypt bool, nonce []byte) ([]byte, error) {
 	env, err := Validate(plain)
 	if err != nil {
 		return nil, err
@@ -192,9 +210,14 @@ func Seal(plain []byte, ring Keyring, encrypt bool) ([]byte, error) {
 		if !ok {
 			return nil, errors.New("no active encryption key")
 		}
-		nonce := make([]byte, XChaChaNonceSize)
-		if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
-			return nil, err
+		if nonce == nil {
+			nonce = make([]byte, XChaChaNonceSize)
+			if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+				return nil, err
+			}
+		}
+		if len(nonce) != XChaChaNonceSize {
+			return nil, fmt.Errorf("nonce must be %d bytes, got %d", XChaChaNonceSize, len(nonce))
 		}
 
 		header := make([]byte, HeaderSize)
@@ -207,7 +230,7 @@ func Seal(plain []byte, ring Keyring, encrypt bool) ([]byte, error) {
 		copy(meta[0:24], nonce)
 		binary.LittleEndian.PutUint32(meta[24:28], key.NumericID)
 
-		derived, err := deriveEnvelopeKey(key.Key, key.NumericID, env.Sequence, env.EventID)
+		derived, err := deriveEnvelopeKey(key.Key, key.NumericID, env.Sequence, env.EventID, env.Version)
 		if err != nil {
 			return nil, err
 		}
@@ -284,7 +307,7 @@ func openAEAD(raw []byte, env Envelope, ring Keyring) ([]byte, error) {
 	ciphertext := raw[ctStart:ctEnd]
 	tag := raw[len(raw)-AEADTagSize:]
 
-	derived, err := deriveEnvelopeKey(key.Key, keyID, env.Sequence, env.EventID)
+	derived, err := deriveEnvelopeKey(key.Key, keyID, env.Sequence, env.EventID, env.Version)
 	if err != nil {
 		return nil, err
 	}

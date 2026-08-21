@@ -1,0 +1,29 @@
+name: consumer-vectors
+
+# Cross-repo consumer certification gate (best-effort).
+#
+# Verifies that any checked-out Relay/Trace vendored copies of the protocol
+# golden vectors still match the source of truth. The consumer repos are
+# PRIVATE, so a normal CI checkout does not include them: when a consumer
+# directory is absent the gate prints SKIP and passes (exit 0). It only fails
+# (exit 1) when a present consumer diverges. See tools/verify_vendored.py.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-vendored:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: '3.12'
+      - name: Verify vendored consumer vectors (best-effort)
+        run: python tools/verify_vendored.py

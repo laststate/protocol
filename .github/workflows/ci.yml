@@ -1,32 +1,43 @@
-name: CI
+name: ci
+
+# LEP reference-codec and conformance checks. Runs on every push/PR.
+
 on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
   workflow_dispatch:
   workflow_call:
+
 permissions:
   contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
-  test:
+  go:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: implementations/go
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version: '1.26.x'
+          cache-dependency-path: implementations/go/go.sum
+      - run: go vet ./...
+      - run: go test ./...
+
+  conformance:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.22.x'
-          cache-dependency-path: implementations/go/go.sum
-      - name: Vet reference codec
-        working-directory: implementations/go
-        run: go vet ./...
-      - name: Go reference codec
-        working-directory: implementations/go
-        run: go test ./...
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: '3.12'
-      - name: Golden vectors conformance
+      - name: Run conformance runner
         run: python conformance/runner/run.py

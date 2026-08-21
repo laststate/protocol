@@ -13,22 +13,26 @@ import (
 
 // Stream framing constants.
 const (
-	LSHeaderSize       = 8
-	LSTailSize         = 4
-	LSAckMagic         = "LSAK"
-	LSAckVersion       = 1
-	LSAckSize          = 12
-	LSAckStored  uint8 = iota + 1
-	LSAckDuplicate
-	LSAckNackCorrupt
-	LSAckNackUnsupported
-	LSAckNackBusy
-	LSAckNackTooLarge
-	LSAckNackUnauthorized
-	LSAckNackInternal
+	LSHeaderSize = 8
+	LSTailSize   = 4
+	LSAckMagic   = "LSAK"
+	LSAckVersion = 1
+	LSAckSize    = 12
 )
 
-// LSAK status codes (1-indexed).
+// LSAK status codes (1-indexed, per spec/framing.md).
+const (
+	LSAckStored          uint8 = 1 // ACK_STORED
+	LSAckDuplicate       uint8 = 2 // ACK_DUPLICATE
+	LSAckNackCorrupt     uint8 = 3 // NACK_CORRUPT
+	LSAckNackUnsupported uint8 = 4 // NACK_UNSUPPORTED
+	LSAckNackBusy        uint8 = 5 // NACK_BUSY
+	LSAckNackTooLarge    uint8 = 6 // NACK_TOO_LARGE
+	LSAckNackUnauthorized uint8 = 7 // NACK_UNAUTHORIZED
+	LSAckNackInternal    uint8 = 8 // NACK_INTERNAL
+)
+
+// LSAK status aliases (1-indexed).
 const (
 	LSAckStatusStored           = LSAckStored
 	LSAckStatusDuplicate        = LSAckDuplicate

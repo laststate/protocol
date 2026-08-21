@@ -12,3 +12,5 @@ Thumbs.db
 implementations/go/vendor/
 *.exe
 *.test
+coverage
+*.out

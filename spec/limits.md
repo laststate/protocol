@@ -10,7 +10,7 @@ Receivers MUST enforce bounds **before** allocating based on untrusted lengths.
 | Minimum plain envelope | 28 | header + empty payload CRC |
 | Maximum envelope (gateway default) | 4 MiB (`4194304`) | Relay / reference Go |
 | Recommended maximum (MCU) | 64 KiB | Product policy |
-| Header maximum (v1) | 24 | No variable header in v1 |
+| Header maximum | 24 | No variable header in v1 or v2 |
 | AEAD metadata | 28 | When AEAD |
 | Max auth trailer | 32 | HMAC |
 

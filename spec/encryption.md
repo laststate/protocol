@@ -1,6 +1,8 @@
-# Encryption and Authentication (v1.0)
+# Encryption and Authentication (v2.0)
 
 **Status:** Frozen — device path (Latch) is normative for all producers.
+Applies to wire versions 1 and 2; the HKDF info label is bound to the
+envelope's `version` byte (§6.4 of [`lep-v2.md`](lep-v2.md)).
 
 ## Flags
 
@@ -48,12 +50,21 @@ flowchart TD
 | IKM | 32-byte device key |
 | KDF | HKDF-SHA256 |
 | salt | key_id \|\| sequence \|\| event_id (12 bytes LE) |
-| info | `laststate/latch/envelope/v1` (ASCII, no NUL) |
+| info (v1) | `laststate/latch/envelope/v1` (ASCII, no NUL) |
+| info (v2) | `laststate/latch/envelope/v2` (ASCII, no NUL) |
 | Output | 32-byte derived key |
+
+The info label MUST be selected from the envelope's `version` byte. v1 and
+v2 must never share a derived key.
 
 MUST NOT reuse (derived_key, nonce). Implementations MUST verify tag before exposing plaintext.
 
-Golden: [`../test-vectors/crypto/aead-xchacha.hex`](../test-vectors/crypto/aead-xchacha.hex).
+Golden (v1): [`../test-vectors/crypto/aead-xchacha-v1.hex`](../test-vectors/crypto/aead-xchacha-v1.hex)  
+Golden (v2): [`../test-vectors/crypto/aead-xchacha-v2.hex`](../test-vectors/crypto/aead-xchacha-v2.hex)
+
+Test keys and nonces for these goldens are recorded in
+[`../test-vectors/manifest.json`](../test-vectors/manifest.json) so any
+implementation can reproduce them.
 
 ## Auth-only — HMAC-SHA-256
 
@@ -70,7 +81,8 @@ mac = HMAC-SHA-256(key, header || payload || payload_crc)
 
 Key id is out of band (config). Prefer the same numeric id space as AEAD `key_id`.
 
-Golden: [`../test-vectors/crypto/hmac-auth-only.hex`](../test-vectors/crypto/hmac-auth-only.hex).
+Golden (v1): [`../test-vectors/crypto/hmac-auth-only-v1.hex`](../test-vectors/crypto/hmac-auth-only-v1.hex)  
+Golden (v2): [`../test-vectors/crypto/hmac-auth-only-v2.hex`](../test-vectors/crypto/hmac-auth-only-v2.hex)
 
 ## Replay
 
@@ -85,7 +97,8 @@ flowchart TD
 
 Default sequence window size: **64**.
 
-## Non-goals (v1.0)
+## Non-goals
 
-- Asymmetric envelope signatures (see signatures.md for bundles)  
-- Gateway-only historical metadata packing (removed; use device path)  
+- Asymmetric envelope signatures (see signatures.md for bundles)
+- Gateway-only historical metadata packing (removed; use device path)
+- Per-version cipher suites (v1 and v2 use the same algorithms)  

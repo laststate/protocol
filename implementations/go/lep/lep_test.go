@@ -38,7 +38,18 @@ func TestGoldenValid(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.Type != 2 || h.Sequence != 7 || h.EventID != 9 || h.PayloadLength != 6 {
+	if h.Version != 1 || h.Type != 2 || h.Sequence != 7 || h.EventID != 9 || h.PayloadLength != 6 {
+		t.Fatalf("unexpected header: %+v", h)
+	}
+}
+
+func TestGoldenValidV2(t *testing.T) {
+	raw := loadHex(t, "valid/lep-v2-basic.hex")
+	h, err := lep.Validate(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.Version != 2 || h.Type != 2 || h.Sequence != 7 || h.EventID != 9 || h.PayloadLength != 6 {
 		t.Fatalf("unexpected header: %+v", h)
 	}
 }
