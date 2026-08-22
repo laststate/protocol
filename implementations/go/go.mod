@@ -1,9 +1,9 @@
 module github.com/laststate/protocol/implementations/go
 
-go 1.22
+go 1.24
 
 require (
-	github.com/klauspost/compress v1.17.11
+	github.com/klauspost/compress v1.19.2
 	golang.org/x/crypto v0.31.0
 )
 
