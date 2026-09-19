@@ -1,8 +1,8 @@
-# LEP v2.0.0 — Congelado (reference, não produto)
+# LEP v2.0.0 — Frozen (reference, not a product)
 
-> Decisão 2026-08-26: LEP é contrato reference. Latch 1.0 é o produto. Relay/Trace são reference gateway/cloud que consomem LEP, não SKUs.
+> Decision 2026-08-26: LEP is a reference contract. Latch 1.0 is the product. Relay/Trace are reference gateway/cloud that consume LEP, not SKUs.
 
-- **Versão:** `VERSION` = 2.0.0 (ver `spec/lep-v2.md`, `spec/lep-v1.md`)
-- **Regra:** sem breaking changes sem ADR + major bump. Golden hex em `test-vectors/` roda em todo CI (`conformance/runner/run.py`, `implementations/go`).
-- **Publicação:** LEP não tem registry — `latch/library.json:5` e `idf_component.yml:4` publicam Latch (que implementa LEP), não o protocolo isolado.
-- **Próximo:** LEP v2.x só com additive TLVs (skippable). Qualquer TLV novo documenta-se em `spec/registry/tlv-types.md` primeiro.
+- **Version:** `VERSION` = 2.0.0 (see `spec/lep-v2.md`, `spec/lep-v1.md`)
+- **Rule:** no breaking changes without ADR + major bump. Golden hex in `test-vectors/` runs on every CI (`conformance/runner/run.py`, `implementations/go`).
+- **Publishing:** LEP has no registry — `latch/library.json:5` and `idf_component.yml:4` publish Latch (which implements LEP), not the standalone protocol.
+- **Next:** LEP v2.x only with additive TLVs (skippable). Any new TLV is documented in `spec/registry/tlv-types.md` first.
