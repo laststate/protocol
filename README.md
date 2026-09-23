@@ -15,8 +15,12 @@ wins**.
 
 Relay and Trace keep local LEP codecs for deployment independence, but their CI
 runs `test-vectors/` against those codecs (`PROTOCOL_VECTORS` /
-`TestProtocolVectors`). Prefer changing this repo first, then bumping consumer
-codecs.
+`TestProtocolVectors`).
+
+> [!NOTE]
+> Change this repo first, then bump consumer codecs. A byte fixed only
+> downstream gets overwritten on the next sync — the spec is the single
+> source of truth.
 
 ## Wire (summary)
 
@@ -72,11 +76,16 @@ To add a new golden vector or update the registry:
 3. Run the conformance runner; fix the codec if a vector no longer passes.
 4. Update the [`CHANGELOG.md`](CHANGELOG.md) with a one-line note.
 
+> [!IMPORTANT]
+> v2.0.0 is frozen (see [FREEZE.md](FREEZE.md)): no breaking changes without
+> an ADR and a major bump. New TLVs are additive and skippable only.
+
 ## Not in this repo
 
 Product code: HardFault handlers, SQLite spool, Trace UI, Probe PCB, cloud
 billing. Those live in [`latch`](https://github.com/laststate/latch),
-[`relay`](https://github.com/laststate/relay), and the private Trace backend.
+[`relay`](https://github.com/laststate/relay), and
+[`trace`](https://github.com/laststate/trace) (AGPL-3.0).
 
 ## Community and security
 
