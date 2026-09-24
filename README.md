@@ -59,6 +59,7 @@ conformance/runner/   Vector checker
 | [registry/tlv-types.md](registry/tlv-types.md) | All TLV byte layouts |
 | [spec/compatibility.md](spec/compatibility.md) | Versioning |
 | [spec/limits.md](spec/limits.md) | Size bounds |
+| [spec/lep-billing-events.md](spec/lep-billing-events.md) | Billing realtime mapping (informational, no wire change) |
 
 ## Try it
 
