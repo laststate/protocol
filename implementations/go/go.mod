@@ -3,7 +3,7 @@ module github.com/laststate/protocol/implementations/go
 go 1.26.0
 
 require (
-	github.com/klauspost/compress v1.20.0
+	github.com/klauspost/compress v1.20.1
 	golang.org/x/crypto v0.57.0
 )
 
